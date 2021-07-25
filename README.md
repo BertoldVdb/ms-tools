@@ -47,14 +47,18 @@ This repository contains the schematics and Gerbers of a simple PCB with the MS2
 ## Compatible hardware
 These are randomly selected links after a quick Aliexpress search, I have no relation to the seller.
 *MS2106:*
-https://aliexpress.com/item/33013186767.html
-https://aliexpress.com/item/4001066406950.html
-https://aliexpress.com/item/1005002943812391.html
+
+- https://aliexpress.com/item/33013186767.html
+- https://aliexpress.com/item/4001066406950.html
+- https://aliexpress.com/item/1005002943812391.html
+
 You can buy packaged solutions as well, but there are many chips that convert CVBS->USB and you never know which one you get. Almost all single-chip embedded modules seem to be MS2106 based.
 
 *MS2109:*
-https://aliexpress.com/item/1005001880861192.html
-https://aliexpress.com/item/4001063622632.html
-https://aliexpress.com/item/1005001599431974.html
+
+- https://aliexpress.com/item/1005001880861192.html
+- https://aliexpress.com/item/4001063622632.html
+- https://aliexpress.com/item/1005001599431974.html
+
 It seems any cheap HDMI->USB converter contains the MS2109 chip. Do not buy a USB3.0 version as the extra pins are simply unconnected.
 
