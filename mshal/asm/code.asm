@@ -1,0 +1,2 @@
+MOVC A, @A+DPTR
+RET
