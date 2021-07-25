@@ -34,7 +34,7 @@ var CLI struct {
 
 	DumpROM DumpROM `cmd help:"Dump ROM (code) to file by uploading custom code."`
 
-	I2CScan     I2CScan     `cmd name:"i2c-scan" help:"Scan I2C bus and shown discovered devices."`
+	I2CScan     I2CScan     `cmd name:"i2c-scan" help:"Scan I2C bus and show discovered devices."`
 	I2CTransfer I2CTransfer `cmd name:"i2c-txfr" help:"Perform I2C transfer."`
 
 	GPIOSet GPIOSet `cmd name:"gpio-set" help:"Set GPIO pin value and direction."`
