@@ -37,7 +37,12 @@ In the folder 'cli' there is a simple Golang application that uses mshal to talk
 
 Most commands have extra options. To get help simply run the program as follows:  
 Main program: ./cli --help  
-Command: ./cli read --help
+Command: ./cli read --help  
+
+Example commands for EEPROM programming:
+
+ - Write: ./cli --no-firmware --log-level 2 write-file --verify EEPROM 0 /tmp/eeprom.bin
+ - Read: ./cli --no-firmware --log-level 2 --help EEPROM 0 --filename=/tmp/eeprom.bin
 
 ## MS2106 Board
 
@@ -45,7 +50,8 @@ This repository contains the schematics and Gerbers of a simple PCB with the MS2
 ![MS2106 Dev Board](https://raw.githubusercontent.com/BertoldVdb/ms-tools/main/board/ms2106/Image.jpg)
 
 ## Compatible hardware
-These are randomly selected links after a quick Aliexpress search, I have no relation to the seller.
+These are randomly selected links after a quick Aliexpress search, I have no relation to the seller.  
+
 *MS2106:*
 
 - https://aliexpress.com/item/33013186767.html
