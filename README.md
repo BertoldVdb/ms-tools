@@ -35,8 +35,8 @@ In the folder 'cli' there is a simple Golang application that uses mshal to talk
 - gpio-set **command**: Set GPIO pin value and direction.
 - gpio-get: Get GPIO values.
 
-Most commands have extra options. To get help simply run the program as follows:
-Main program: ./cli --help
+Most commands have extra options. To get help simply run the program as follows:  
+Main program: ./cli --help  
 Command: ./cli read --help
 
 ## MS2106 Board
