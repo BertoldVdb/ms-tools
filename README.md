@@ -42,7 +42,7 @@ Command: ./cli read --help
 Example commands for EEPROM programming:
 
  - Write: ./cli --no-firmware --log-level 2 write-file --verify EEPROM 0 /tmp/eeprom.bin
- - Read: ./cli --no-firmware --log-level 2 --help EEPROM 0 --filename=/tmp/eeprom.bin
+ - Read: ./cli --no-firmware --log-level 2 read EEPROM 0 --filename=/tmp/eeprom.bin
 
 ## MS2106 Board
 
