@@ -11,8 +11,9 @@ type HAL struct {
 	deviceTypeExtra int
 	eepromSize      int
 
-	patchAllocAddr int
-	patchCallAddrs []int
+	patchAllocAddr              int
+	patchCallAddrsExternalStart int
+	patchCallAddrs              []int
 
 	patchInstalled bool
 
@@ -27,6 +28,7 @@ type HALConfig struct {
 	PatchTryInstall         bool
 	PatchIgnoreUserFirmware bool
 	PatchProbeEEPROM        bool
+	PatchBlobs              []CodeBlob
 
 	LogFunc LogFunc
 }

@@ -5,12 +5,12 @@ func (h *HAL) GPIOUpdate(stateSet byte, stateClear byte, outputSet byte, outputC
 		return 0, 0, ErrorMissingFunction
 	}
 
-	var req patchExecFuncRequest
+	var req PatchExecFuncRequest
 	req.R4 = stateSet
 	req.R5 = ^stateClear
 	req.R6 = outputClear
 	req.R7_A = ^outputSet
-	resp, err := h.patchExecFunc(true, h.patchCallAddrs[1], req)
+	resp, err := h.PatchExecFunc(true, h.patchCallAddrs[1], req)
 
 	return resp.R2, ^resp.R3, err
 }

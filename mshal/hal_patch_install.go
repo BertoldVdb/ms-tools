@@ -103,9 +103,9 @@ func (h *HAL) patchTrampolineInstall(ram MemoryRegion, replaceCode bool, addr in
 	return h.patchWriteWithRET(ram, addr, []byte{0x02, byte(trampolineAddr >> 8), byte(trampolineAddr)})
 }
 
-type blob struct {
-	data  []byte
-	reloc func(dataCopy []byte, addr int) (int, []byte)
+type CodeBlob struct {
+	Data     []byte
+	Relocate func(dataCopy []byte, addr int) (int, []byte)
 }
 
 //go:embed asm/hook_2106.bin
@@ -135,26 +135,26 @@ var codeMOVC []byte
 //go:embed asm/i2cRead2109.bin
 var codei2cRead []byte
 
-var installBlobs2106 = []blob{
+var installBlobs2106 = []CodeBlob{
 	{
-		data:  codeCallgate2106,
-		reloc: relocateCallgate,
+		Data:     codeCallgate2106,
+		Relocate: relocateCallgate,
 	}, {
-		data: codeGpio,
+		Data: codeGpio,
 	}, {
-		data: codeMOVC,
+		Data: codeMOVC,
 	}}
 
-var installBlobs2109 = []blob{
+var installBlobs2109 = []CodeBlob{
 	{
-		data:  codeCallgate2109,
-		reloc: relocateCallgate,
+		Data:     codeCallgate2109,
+		Relocate: relocateCallgate,
 	}, {
-		data: codeGpio,
+		Data: codeGpio,
 	}, {
-		data: codeMOVC,
+		Data: codeMOVC,
 	}, {
-		data: codei2cRead,
+		Data: codei2cRead,
 	},
 }
 
@@ -308,6 +308,9 @@ func (h *HAL) patchInstall() (bool, error) {
 		installBlobs = installBlobs2109
 	}
 
+	h.patchCallAddrsExternalStart = len(installBlobs)
+	installBlobs = append(installBlobs, h.config.PatchBlobs...)
+
 	ram := h.MemoryRegionGet(MemoryRegionRAM)
 	userConfig := h.MemoryRegionGet(MemoryRegionUserConfig)
 
@@ -316,7 +319,7 @@ func (h *HAL) patchInstall() (bool, error) {
 	/* Calculate checksum of blobs */
 	crc := crc32.New(crc32.IEEETable)
 	for _, m := range installBlobs {
-		crc.Write(m.data)
+		crc.Write(m.Data)
 	}
 	sum := crc.Sum(nil)
 
@@ -369,15 +372,15 @@ func (h *HAL) patchInstall() (bool, error) {
 
 	/* Install all blobs */
 	for i, m := range installBlobs {
-		data := m.data
+		data := m.Data
 
 		loadAddr := h.patchAlloc(len(data))
 		callAddr := loadAddr
 
-		if m.reloc != nil {
+		if m.Relocate != nil {
 			dataCopy := make([]byte, len(data))
 			copy(dataCopy, data)
-			callAddr, data = m.reloc(dataCopy, loadAddr)
+			callAddr, data = m.Relocate(dataCopy, loadAddr)
 		}
 
 		if h.config.LogFunc != nil {

@@ -17,7 +17,7 @@ func (h *HAL) patchExchangeReport(out [9]byte) ([9]byte, error) {
 		return in, err
 	}
 
-	timeout := time.Now().Add(time.Second)
+	timeout := time.Now().Add(3 * time.Second)
 
 	for time.Now().Before(timeout) {
 		_, err := h.dev.GetFeatureReport(in[:])
@@ -37,7 +37,7 @@ func (h *HAL) patchExchangeReport(out [9]byte) ([9]byte, error) {
 	return in, ErrorTimeout
 }
 
-type patchExecFuncResponse struct {
+type PatchExecFuncResponse struct {
 	A  byte
 	R2 byte
 	R3 byte
@@ -48,7 +48,7 @@ type patchExecFuncResponse struct {
 	C  bool
 }
 
-type patchExecFuncRequest struct {
+type PatchExecFuncRequest struct {
 	DPTR uint16
 	R3   byte
 	R4   byte
@@ -57,8 +57,8 @@ type patchExecFuncRequest struct {
 	R7_A byte
 }
 
-func (h *HAL) patchExecFunc(inIRQ bool, addr int, req patchExecFuncRequest) (patchExecFuncResponse, error) {
-	var response patchExecFuncResponse
+func (h *HAL) PatchExecFunc(inIRQ bool, addr int, req PatchExecFuncRequest) (PatchExecFuncResponse, error) {
+	var response PatchExecFuncResponse
 
 	if !h.patchInstalled {
 		return response, ErrorMissingFunction
@@ -100,4 +100,17 @@ func (h *HAL) patchExecFunc(inIRQ bool, addr int, req patchExecFuncRequest) (pat
 	response.R7 = in[8]
 	response.C = in[1]&1 > 0
 	return response, nil
+}
+
+func (h *HAL) PatchCodeBlobGetAddress(index int) int {
+	if index < 0 {
+		return 0
+	}
+
+	index += h.patchCallAddrsExternalStart
+	if index >= len(h.patchCallAddrs) {
+		return 0
+	}
+
+	return h.patchCallAddrs[index]
 }

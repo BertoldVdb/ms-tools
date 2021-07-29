@@ -6,7 +6,7 @@ func (h *HAL) patchI2CStart() error {
 		addr = 0x6a8c
 	}
 
-	_, err := h.patchExecFunc(true, addr, patchExecFuncRequest{})
+	_, err := h.PatchExecFunc(true, addr, PatchExecFuncRequest{})
 	return err
 }
 
@@ -15,7 +15,7 @@ func (h *HAL) patchI2CStop() error {
 	if h.deviceType == 2109 {
 		addr = 0x6aba
 	}
-	_, err := h.patchExecFunc(true, addr, patchExecFuncRequest{})
+	_, err := h.PatchExecFunc(true, addr, PatchExecFuncRequest{})
 	return err
 }
 
@@ -28,7 +28,7 @@ func (h *HAL) patchI2CRead(ack bool) (uint8, error) {
 	if ack {
 		r7 = 0
 	}
-	resp, err := h.patchExecFunc(true, addr, patchExecFuncRequest{R7_A: r7})
+	resp, err := h.PatchExecFunc(true, addr, PatchExecFuncRequest{R7_A: r7})
 	return resp.R7, err
 }
 
@@ -37,7 +37,7 @@ func (h *HAL) patchI2CWrite(value uint8) (bool, error) {
 	if h.deviceType == 2109 {
 		addr = 0x4648
 	}
-	resp, err := h.patchExecFunc(true, addr, patchExecFuncRequest{R7_A: value})
+	resp, err := h.PatchExecFunc(true, addr, PatchExecFuncRequest{R7_A: value})
 	if h.deviceType == 2109 {
 		return resp.C, err
 	}

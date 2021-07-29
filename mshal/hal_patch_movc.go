@@ -1,7 +1,7 @@
 package mshal
 
 func (h *HAL) patchReadCode(addr int) (byte, error) {
-	resp, err := h.patchExecFunc(true, h.patchCallAddrs[2], patchExecFuncRequest{DPTR: uint16(addr)})
+	resp, err := h.PatchExecFunc(true, h.patchCallAddrs[2], PatchExecFuncRequest{DPTR: uint16(addr)})
 	if err != nil {
 		return 0, err
 	}
