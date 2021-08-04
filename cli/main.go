@@ -15,7 +15,7 @@ type Context struct {
 }
 
 var CLI struct {
-	VID      int    `optional type:"hex" help:"The USB Vendor ID."`
+	VID      int    `optional type:"hex" help:"The USB Vendor ID." default:534d`
 	PID      int    `optional type:"hex" help:"The USB Product ID."`
 	Serial   string `optional help:"The USB Serial."`
 	RawPath  string `optional help:"The USB Device Path."`

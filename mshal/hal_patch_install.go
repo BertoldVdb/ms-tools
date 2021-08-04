@@ -42,25 +42,25 @@ func (h *HAL) patchWriteWithRET(region MemoryRegion, addr int, data []byte) erro
 }
 
 func patchTrampolineEncode(orig []byte, origAddr int, R0Value byte, hookAddr int) []byte {
-	// ...orig...
-	// LCALL origAddr
-	// MOV   R0, #R0Value
-	// LJMP  hookAddr
+	// PUSH R7
+	// MOV R0, #R0Value
+	// LCALL hookAddr
+	// POP R7
+	// ...orig...    -> If this returns there will be no jump to origAddr, which is what we want.
+	// LJMP origAddr
 
-	trampolineOrig := []byte{
-		0x12, byte(origAddr >> 8), byte(origAddr),
-	}
-
-	trampolineHook := []byte{
+	result := []byte{
+		0xC0, 0x7,
 		0x78, R0Value,
-		0x02, byte(hookAddr >> 8), byte(hookAddr),
+		0x12, byte(hookAddr >> 8), byte(hookAddr),
+		0xD0, 0x7,
 	}
 
-	result := orig
+	result = append(result, orig...)
+
 	if origAddr != 0 {
-		result = append(result, trampolineOrig...)
+		result = append(result, []byte{0x02, byte(origAddr >> 8), byte(origAddr)}...)
 	}
-	result = append(result, trampolineHook...)
 
 	return result
 }
@@ -299,6 +299,7 @@ func (h *HAL) patchInitAlloc(userConfig MemoryRegion) (bool, error) {
 	_, userOffset := RecursiveGetParentAddress(userConfig, userConfig.GetLength())
 
 	h.patchAllocAddr = userOffset + userCodeLen
+
 	return userCodePresent, nil
 }
 

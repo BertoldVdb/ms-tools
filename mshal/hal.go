@@ -80,6 +80,8 @@ func New(dev *hid.Device, config HALConfig) (*HAL, error) {
 		h.patchInstalled = true
 	}
 
+	h.eepromSize = config.EEPromSize
+
 	if h.eepromSize == 0 && config.PatchProbeEEPROM {
 		h.eepromSize, err = h.patchEepromDetectSize()
 		if err != nil {
