@@ -1,3 +1,2 @@
 MOV 0x21.0, C
-LCALL 0x4cf3
-RET
+LJMP 0x4cf3
