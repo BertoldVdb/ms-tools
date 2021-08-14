@@ -56,10 +56,15 @@ func patchTrampolineEncode(orig []byte, origAddr int, R0Value byte, hookAddr int
 		0xD0, 0x7,
 	}
 
+	/* Add snippet of replaced code */
 	result = append(result, orig...)
 
 	if origAddr != 0 {
+		/* Jump to rest of original code */
 		result = append(result, []byte{0x02, byte(origAddr >> 8), byte(origAddr)}...)
+	} else {
+		/* Just return if no origAddr */
+		result = append(result, 0x22)
 	}
 
 	return result
