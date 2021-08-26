@@ -80,6 +80,14 @@ func (h *HAL) MemoryRegionGet(name MemoryRegionNameType) MemoryRegion {
 			return regionWrapPartial(MemoryRegionUserConfig, h.MemoryRegionGet(MemoryRegionUserRAM), 0x3F0, 0x10)
 
 		case MemoryRegionRegisters2106TVD:
+			if h.patchInstalled {
+				if h.config.LogFunc != nil {
+					h.config.LogFunc(1, "Using patched TVD access")
+				}
+
+				return h.patchMakeTVDRegion()
+			}
+
 			return h.memoryRegionRegisters2106TVD()
 		}
 	}
