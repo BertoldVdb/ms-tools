@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/BertoldVdb/ms-tools/gohid"
 	"github.com/BertoldVdb/ms-tools/mshal"
 	"github.com/alecthomas/kong"
-	"github.com/sstallion/go-hid"
 )
 
 type Context struct {
-	dev *hid.Device
+	dev gohid.HIDDevice
 	hal *mshal.HAL
 }
 
@@ -56,8 +56,8 @@ func main() {
 		return
 	}
 
-	hid.Init()
-	defer hid.Exit()
+	//	hid.Init()
+	//	defer hid.Exit()
 
 	c := &Context{}
 	if ctx.Command() != "list-dev" {

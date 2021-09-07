@@ -1,11 +1,11 @@
 package mshal
 
 import (
-	"github.com/sstallion/go-hid"
+	"github.com/BertoldVdb/ms-tools/gohid"
 )
 
 type HAL struct {
-	dev *hid.Device
+	dev gohid.HIDDevice
 
 	deviceType      int
 	deviceTypeExtra int
@@ -33,7 +33,7 @@ type HALConfig struct {
 	LogFunc LogFunc
 }
 
-func New(dev *hid.Device, config HALConfig) (*HAL, error) {
+func New(dev gohid.HIDDevice, config HALConfig) (*HAL, error) {
 	h := &HAL{
 		dev:    dev,
 		config: config,

@@ -1,0 +1,4 @@
+sudo ./cli write RAM 0xc190 77
+sudo ./cli write RAM 0xc191 01
+sudo ./cli write RAM 0xc190 0x77
+
