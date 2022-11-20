@@ -44,6 +44,11 @@ Example commands for EEPROM programming:
  - Write: ./cli --no-firmware --log-level 2 write-file --verify EEPROM 0 /tmp/eeprom.bin
  - Read: ./cli --no-firmware --log-level 2 read EEPROM 0 --filename=/tmp/eeprom.bin
 
+Example commands for FLASH programming (on MS2130):
+
+ - Write: ./cli --log-level=7 write-file --verify FLASH 0 YuzukiLOHCCPro.bin
+ - Read: ./cli --log-level=7 read FLASH 0 --filename=/tmp/flash.bin
+
 ## MS2106 Board
 
 This repository contains the schematics and Gerbers of a simple PCB with the MS2106 chip. You can find it in the folder 'board/ms2106'. Here you can see a picture of the completed board:
@@ -66,5 +71,14 @@ You can buy packaged solutions as well, but there are many chips that convert CV
 - https://aliexpress.com/item/4001063622632.html
 - https://aliexpress.com/item/1005001599431974.html
 
-It seems any cheap HDMI->USB converter contains the MS2109 chip. Do not buy a USB3.0 version as the extra pins are simply unconnected.
+It seems any cheap HDMI->USB converter contains the MS2109 chip. 
+
+*MS2130:*
+
+- https://www.aliexpress.com/item/1005004883158574.html
+- https://github.com/YuzukiHD/YuzukiLOHCC-PRO (DIY board)
+
+This is a true HDMI->USB3.0 single chip solution. Experimental support has been added to this library.
+
+
 
