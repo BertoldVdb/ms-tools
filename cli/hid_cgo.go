@@ -1,3 +1,4 @@
+//go:build !puregohid
 // +build !puregohid
 
 package main
@@ -13,16 +14,21 @@ import (
 )
 
 func SearchDevice(foundHandler func(info *hid.DeviceInfo) error) error {
-	return hid.Enumerate(uint16(CLI.VID), uint16(CLI.PID), func(info *hid.DeviceInfo) error {
-		if CLI.Serial != "" && info.SerialNbr != CLI.Serial {
-			return nil
-		}
-		if CLI.RawPath != "" && info.Path != CLI.RawPath {
-			return nil
-		}
+	for _, vid := range []uint16{uint16(CLI.VID), uint16(CLI.VID2)} {
+		if err := hid.Enumerate(vid, uint16(CLI.PID), func(info *hid.DeviceInfo) error {
+			if CLI.Serial != "" && info.SerialNbr != CLI.Serial {
+				return nil
+			}
+			if CLI.RawPath != "" && info.Path != CLI.RawPath {
+				return nil
+			}
 
-		return foundHandler(info)
-	})
+			return foundHandler(info)
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func OpenDevice() (gohid.HIDDevice, error) {

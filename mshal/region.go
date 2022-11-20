@@ -1,10 +1,13 @@
 package mshal
 
+import "errors"
+
 type MemoryRegion interface {
 	GetLength() int
 	Access(write bool, addr int, buf []byte) (int, error)
 	GetParent() (MemoryRegion, int)
 	GetName() MemoryRegionNameType
+	GetAlignment() int
 }
 
 type regionCompleteIO struct {
@@ -18,6 +21,13 @@ func regionWrapCompleteIO(parent MemoryRegion) MemoryRegion {
 }
 
 func (m regionCompleteIO) Access(write bool, addr int, buf []byte) (int, error) {
+	align := m.GetAlignment()
+	if addr&(align-1) != 0 {
+		return 0, errors.New("address alignment has been violated")
+	} else if write && len(buf)%align != 0 {
+		return 0, errors.New("data alignment has been violated")
+	}
+
 	total := 0
 	for len(buf) > 0 {
 		n, err := m.MemoryRegion.Access(write, addr+total, buf)
@@ -69,6 +79,10 @@ func (h regionPartial) GetLength() int {
 
 func (h regionPartial) GetParent() (MemoryRegion, int) {
 	return h.parent, h.offset
+}
+
+func (h regionPartial) GetAlignment() int {
+	return h.parent.GetAlignment()
 }
 
 func (h regionPartial) Access(write bool, addr int, buf []byte) (int, error) {

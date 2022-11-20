@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"hash/crc32"
 )
 
@@ -309,9 +310,13 @@ func (h *HAL) patchInitAlloc(userConfig MemoryRegion) (bool, error) {
 }
 
 func (h *HAL) patchInstall() (bool, error) {
-	installBlobs := installBlobs2106
+	var installBlobs []CodeBlob
 	if h.deviceType == 2109 {
 		installBlobs = installBlobs2109
+	} else if h.deviceType == 2106 {
+		installBlobs = installBlobs2106
+	} else {
+		return false, errors.New("this device does not support runtime patching")
 	}
 
 	h.patchCallAddrsExternalStart = len(installBlobs)

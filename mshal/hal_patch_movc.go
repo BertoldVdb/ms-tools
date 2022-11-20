@@ -20,6 +20,10 @@ func (h halPatchCodeMemoryRegion) GetLength() int {
 	return 0x10000
 }
 
+func (h halPatchCodeMemoryRegion) GetAlignment() int {
+	return 1
+}
+
 func (h halPatchCodeMemoryRegion) GetParent() (MemoryRegion, int) {
 	return nil, 0
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -124,6 +125,20 @@ func (w MEMIOWriteCmd) Run(c *Context) error {
 	region := c.hal.MemoryRegionGet(mshal.MemoryRegionNameType(w.Zone.Region))
 	if region == nil {
 		return errors.New("Invalid memory region")
+	}
+
+	if region.GetAlignment() == 4 {
+		var value [4]byte
+		binary.BigEndian.PutUint32(value[:], uint32(w.Value))
+		_, err := region.Access(true, w.Zone.Addr, value[:])
+		return err
+	}
+
+	if region.GetAlignment() == 2 {
+		var value [2]byte
+		binary.BigEndian.PutUint16(value[:], uint16(w.Value))
+		_, err := region.Access(true, w.Zone.Addr, value[:])
+		return err
 	}
 
 	var value [1]byte

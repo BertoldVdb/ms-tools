@@ -3,6 +3,7 @@ package mshal
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"time"
 )
 
@@ -15,6 +16,8 @@ type romCommand struct {
 	is16bit    bool
 	isWrite    bool
 	maxPayload int
+	offset     int
+	addrShift  int
 
 	cbApplyParam   cbApplyParamType
 	cbPostExchange cbPostExchangeType
@@ -58,13 +61,25 @@ func (h *HAL) romExchangeReport(out [9]byte, checkLen int) ([9]byte, error) {
 	return in, nil
 }
 
-func (h *HAL) romProtocolMakeHeader(cmd byte, is16bit bool, addr int) ([9]byte, int) {
+func (h *HAL) ROMExchangeReport(out []byte) ([]byte, error) {
+	var outb [9]byte
+	if len(out) > 8 {
+		return nil, errors.New("buffer longer than 8 bytes")
+	}
+	copy(outb[1:], out)
+	inb, err := h.romExchangeReport(outb, 0)
+	return inb[1:], err
+}
+
+func (h *HAL) romProtocolMakeHeader(cmd byte, is16bit bool, addr int, index int) ([9]byte, int) {
 	var out [9]byte
 
 	out[0] = 0
 	out[1] = byte(cmd)
 
-	index := 2
+	if index == 0 {
+		index = 2
+	}
 	if is16bit {
 		out[index] = byte(addr >> 8)
 		index++
@@ -100,7 +115,9 @@ func (h *HAL) romProtocolExec(cmd romCommand, addr int, buf []byte) (int, error)
 		maxPayload = 1
 	}
 
-	out, index := h.romProtocolMakeHeader(cmd.id, cmd.is16bit, addr)
+	addr >>= cmd.addrShift
+
+	out, index := h.romProtocolMakeHeader(cmd.id, cmd.is16bit, addr, cmd.offset)
 
 	txrLen := 0
 	if cmd.isWrite {
@@ -138,6 +155,7 @@ type halROMMemoryRegion struct {
 	baseAddr     int
 	length       int
 	name         MemoryRegionNameType
+	alignment    int
 }
 
 func (h halROMMemoryRegion) GetName() MemoryRegionNameType {
@@ -150,6 +168,10 @@ func (h halROMMemoryRegion) GetLength() int {
 
 func (h halROMMemoryRegion) GetParent() (MemoryRegion, int) {
 	return nil, 0
+}
+
+func (h halROMMemoryRegion) GetAlignment() int {
+	return h.alignment
 }
 
 func (h halROMMemoryRegion) Access(write bool, addr int, buf []byte) (int, error) {
@@ -167,13 +189,13 @@ func (h halROMMemoryRegion) Access(write bool, addr int, buf []byte) (int, error
 		return h.hal.romProtocolExec(*h.writeCommand, h.baseAddr+addr, buf)
 	}
 
-	if h.writeCommand == nil {
-		return 0, ErrorWriteNotAllowed
+	if h.readCommand == nil {
+		return 0, ErrorReadNotAllowed
 	}
 	return h.hal.romProtocolExec(*h.readCommand, h.baseAddr+addr, buf)
 }
 
-func (h *HAL) romMemoryRegionMake(name MemoryRegionNameType, baseAddr int, length int, read *romCommand, write *romCommand) MemoryRegion {
+func (h *HAL) romMemoryRegionMake(name MemoryRegionNameType, baseAddr int, length int, alignment int, read *romCommand, write *romCommand) MemoryRegion {
 	return regionWrapCompleteIO(halROMMemoryRegion{
 		hal:          h,
 		baseAddr:     baseAddr,
@@ -181,6 +203,7 @@ func (h *HAL) romMemoryRegionMake(name MemoryRegionNameType, baseAddr int, lengt
 		readCommand:  read,
 		writeCommand: write,
 		name:         name,
+		alignment:    alignment,
 	})
 }
 

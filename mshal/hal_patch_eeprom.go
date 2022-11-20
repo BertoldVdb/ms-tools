@@ -124,6 +124,10 @@ func (h halPatchEEPROMMemoryRegion) write(addr int, buf []byte) (int, error) {
 	return len(buf), nil
 }
 
+func (h halPatchEEPROMMemoryRegion) GetAlignment() int {
+	return 1
+}
+
 func (h halPatchEEPROMMemoryRegion) Access(write bool, addr int, buf []byte) (int, error) {
 	if len(buf) == 0 {
 		return 0, nil

@@ -44,6 +44,10 @@ func (h halPatchTVDMemoryRegion) write(addr int, buf []byte) (int, error) {
 	return 1, nil
 }
 
+func (h halPatchTVDMemoryRegion) GetAlignment() int {
+	return 1
+}
+
 func (h halPatchTVDMemoryRegion) Access(write bool, addr int, buf []byte) (int, error) {
 	if len(buf) == 0 {
 		return 0, nil

@@ -16,6 +16,7 @@ type Context struct {
 
 var CLI struct {
 	VID      int    `optional type:"hex" help:"The USB Vendor ID." default:534d`
+	VID2     int    `optional type:"hex" help:"The second USB Vendor ID." default:345f`
 	PID      int    `optional type:"hex" help:"The USB Product ID."`
 	Serial   string `optional help:"The USB Serial."`
 	RawPath  string `optional help:"The USB Device Path."`
@@ -31,6 +32,8 @@ var CLI struct {
 	Read        MEMIOReadCmd      `cmd help:"Read and dump memory."`
 	Write       MEMIOWriteCmd     `cmd help:"Write value to memory."`
 	WriteFile   MEMIOWriteFileCmd `cmd help:"Write file to memory."`
+
+	RawCmd RawCmd `cmd help:"Send raw command to device."`
 
 	DumpROM DumpROM `cmd help:"Dump ROM (code) to file by uploading custom code."`
 
@@ -55,9 +58,6 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-
-	//	hid.Init()
-	//	defer hid.Exit()
 
 	c := &Context{}
 	if ctx.Command() != "list-dev" {

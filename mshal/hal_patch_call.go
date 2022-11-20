@@ -65,7 +65,7 @@ func (h *HAL) PatchExecFunc(inIRQ bool, addr int, req PatchExecFuncRequest) (Pat
 	}
 
 	if req.DPTR != 0 && (req.R4 != 0 || req.R3 != 0) {
-		return response, errors.New("Can't set both DPTR and R3/R4")
+		return response, errors.New("can't set both DPTR and R3/R4")
 	}
 
 	var out [9]byte
