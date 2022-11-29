@@ -16,6 +16,7 @@ The library can patch the currently running firmware to add extra functionality:
  - GPIO Control
  - I2C Bus
  - EEPROM Read/Write (much faster than via the ROM)
+ - FLASH Read/Write
  - CODE Read (8051 MOVC)
  - Call any ROM/FW function and load custom ones.
  
