@@ -12,9 +12,12 @@ func (h *HAL) ms2130enableSPI(enable bool) error {
 		}
 
 		/* Configure GPIO */
-		if _, err := h.MemoryRegionGet(MemoryRegionSFR).Access(true, 0xb0-0x80, []byte{0xe1}); err != nil {
+		output := byte(1<<2 | 1<<3 | 1<<4)
+		input := byte(1 << 5)
+		if _, _, err := h.GPIOUpdate(output, 0, output, input); err != nil {
 			return err
 		}
+
 		value = byte(0x10)
 	} else {
 		if h.ms2130spiEnabled == 0 {
