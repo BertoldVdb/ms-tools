@@ -1,10 +1,9 @@
-# Macrosilicon MS2106/MS2109 research
+# Macrosilicon MS2106/MS2109/MS2130 research
 ## Introduction
-This repository contains some research I did on these two chips to be able to use them on my own PCB.
+This repository contains some research I did on these three chips to be able to use them on my own PCB.
 
 ## Architecture
-The chips contain a 8051 core that executes code from a mask ROM. On boot this code copies extra firmware from an external EEPROM that will be called from some configurable (fixed-address) hooks in the ROM.
-Of course I cannot post the original firmware as I don't know its license. Surprisingly, both chips work quite well with only the ROM code. Of course you can read the EEPROM from a commercial module.
+The chips contain a 8051 core that executes code from a mask ROM. On boot this code copies extra firmware from an external EEPROM that will be called from some configurable (fixed-address) hooks in the ROM. The MS2130 has the full firmware in external FLASH and it does not make use of the ROM after booting. Of course I cannot post the original firmware as I don't know its license. Surprisingly, all chips work quite well with only the ROM code. Of course you can read the EEPROM from a commercial module.
 
 I wrote my own firmware from scratch for the MS2106 and may upload this on a later date.
 
