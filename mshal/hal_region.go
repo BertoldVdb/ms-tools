@@ -79,7 +79,7 @@ func (h *HAL) MemoryRegionList() []MemoryRegionNameType {
 		MemoryRegionUserConfig,
 	}
 
-	if h.deviceType == 2106 || h.deviceType == 2109 {
+	if h.deviceType == 2106 || h.deviceType == 2109 || h.deviceType == 2107 {
 		list = append(list, MemoryRegionUserRAM)
 	}
 
@@ -142,6 +142,16 @@ func (h *HAL) MemoryRegionGet(name MemoryRegionNameType) MemoryRegion {
 			}
 
 			return h.memoryRegionRegisters2106TVD()
+		}
+	}
+
+	if h.deviceType == 2107 {
+		switch t {
+		case MemoryRegionUserRAM:
+			return regionWrapPartial(MemoryRegionUserRAM, h.MemoryRegionGet(MemoryRegionRAM), 0xC000, 0x1400)
+
+		case MemoryRegionUserConfig:
+			return regionWrapPartial(MemoryRegionUserConfig, h.MemoryRegionGet(MemoryRegionUserRAM), 0x7D0, 0x30)
 		}
 	}
 

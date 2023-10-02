@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"hash/crc32"
+	"time"
 )
 
 func (h *HAL) patchAlloc(len int) int {
@@ -71,9 +72,9 @@ func patchTrampolineEncode(orig []byte, origAddr int, R0Value byte, hookAddr int
 	return result
 }
 
-func (h *HAL) patchTrampolineInstall(ram MemoryRegion, replaceCode bool, addr int, R0value byte, hookAddr int) error {
+func (h *HAL) patchTrampolineInstall(ram MemoryRegion, oldCode []byte, addr int, R0value byte, hookAddr int) error {
 	var trampoline []byte
-	if replaceCode {
+	if len(oldCode) == 0 {
 		replaceLen := 0
 		var in [14]byte
 
@@ -93,7 +94,7 @@ func (h *HAL) patchTrampolineInstall(ram MemoryRegion, replaceCode bool, addr in
 
 		trampoline = patchTrampolineEncode(in[:replaceLen], addr+replaceLen, R0value, hookAddr)
 	} else {
-		trampoline = patchTrampolineEncode(nil, 0, R0value, hookAddr)
+		trampoline = patchTrampolineEncode(oldCode, 0, R0value, hookAddr)
 	}
 
 	trampolineAddr := h.patchAlloc(len(trampoline))
@@ -138,8 +139,11 @@ var codeGpio []byte
 //go:embed asm/code.bin
 var codeMOVC []byte
 
+//go:embed asm/i2cRead2107.bin
+var codei2cRead2107 []byte
+
 //go:embed asm/i2cRead2109.bin
-var codei2cRead []byte
+var codei2cRead2109 []byte
 
 var installBlobs2106 = []CodeBlob{
 	{
@@ -151,6 +155,18 @@ var installBlobs2106 = []CodeBlob{
 		Data: codeMOVC,
 	}}
 
+var installBlobs2107 = []CodeBlob{
+	{
+		Data:     codeCallgate2109,
+		Relocate: relocateCallgate,
+	}, {
+		Data: codeGpio,
+	}, {
+		Data: codeMOVC,
+	}, {
+		Data: codei2cRead2107,
+	}}
+
 var installBlobs2109 = []CodeBlob{
 	{
 		Data:     codeCallgate2109,
@@ -160,7 +176,7 @@ var installBlobs2109 = []CodeBlob{
 	}, {
 		Data: codeMOVC,
 	}, {
-		Data: codei2cRead,
+		Data: codei2cRead2109,
 	},
 }
 
@@ -172,19 +188,28 @@ func (h *HAL) EEPROMReloadUser() error {
 	ram := h.MemoryRegionGet(MemoryRegionRAM)
 	userConfig := h.MemoryRegionGet(MemoryRegionUserConfig)
 
-	addr, _, err := h.patchHookGet(userConfig, true)
+	doInIRQ := true
+	var loadEEPROM []byte
+	if h.deviceType == 2106 {
+		loadEEPROM = []byte{0x02, 0x12, 0x82}
+	} else if h.deviceType == 2107 {
+		doInIRQ = false
+		loadEEPROM = []byte{0x02, 0x66, 0x56}
+		defer time.Sleep(125 * time.Millisecond)
+	} else if h.deviceType == 2109 {
+		loadEEPROM = []byte{0x02, 0x5f, 0x19}
+	} else {
+		return ErrorUnknownDevice
+	}
+
+	/* Write RET and disable callback */
+	addr, _, err := h.patchHookGet(userConfig, doInIRQ)
 	if err != nil {
 		return err
-	}
-
-	/* Write RET and enable callback */
-	if err := h.patchHookConfigure(userConfig, true, false); err != nil {
+	} else if err := h.patchHookSet(userConfig, doInIRQ, false); err != nil {
 		return err
-	}
-
-	loadEEPROM := []byte{0x02, 0x12, 0x82}
-	if h.deviceType == 2109 {
-		loadEEPROM = []byte{0x02, 0x5f, 0x19}
+	} else if err := h.patchHookSet(userConfig, !doInIRQ, false); err != nil {
+		return err
 	}
 
 	/* Reload EEPROM from IRQ context */
@@ -192,7 +217,7 @@ func (h *HAL) EEPROMReloadUser() error {
 		return err
 	}
 
-	return h.patchHookConfigure(userConfig, true, true)
+	return h.patchHookSet(userConfig, doInIRQ, true)
 }
 
 func (h *HAL) EEPROMIgnoreUser() error {
@@ -205,6 +230,7 @@ func (h *HAL) EEPROMIgnoreUser() error {
 	ff := bytes.Repeat([]byte{0xFF}, userConfig.GetLength())
 	ff[4] = 0
 	ff[5] = 0
+	ff[8] = 0
 
 	_, err := userConfig.Access(true, 0, ff)
 	return err
@@ -222,14 +248,19 @@ func (h *HAL) EEPROMIsLoaded() (bool, int, error) {
 
 	if h.deviceType == 2106 {
 		return hdr[0] == 0x5a && hdr[1] == 0xa5, eepromLen, nil
+	} else if h.deviceType == 2107 {
+		if hdr[0] == 0x08 && hdr[1] == 0x16 {
+			return true, eepromLen, nil
+		}
+		return hdr[0] == 0x32 && hdr[1] == 0x64, eepromLen, nil
+	} else if h.deviceType == 2109 {
+		if hdr[0] == 0xa5 && hdr[1] == 0x5a {
+			return true, eepromLen, nil
+		}
+		return hdr[0] == 0x96 && hdr[1] == 0x69, eepromLen, nil
 	}
 
-	if hdr[0] == 0xa5 && hdr[1] == 0x5a {
-		return true, eepromLen, nil
-	}
-
-	/* 2109 can also use 16bit eeproms and they have a different header */
-	return hdr[0] == 0x96 && hdr[1] == 0x69, eepromLen, nil
+	return false, 0, ErrorUnknownDevice
 }
 
 func (h *HAL) patchHookGet(loc MemoryRegion, inIRQ bool) (int, bool, error) {
@@ -241,20 +272,25 @@ func (h *HAL) patchHookGet(loc MemoryRegion, inIRQ bool) (int, bool, error) {
 			value, err := ReadByte(loc, 0x5)
 			return 0xc420, value == 0x5a, err
 		}
+	} else if h.deviceType == 2107 {
+		value, err := ReadByte(loc, 0x8)
+		if inIRQ {
+			return 0xc810, value&2 > 0, err
+		} else {
+			return 0xc800, value&1 > 0, err
+		}
+	} else if h.deviceType == 2109 {
+		value, err := ReadByte(loc, 0x4)
+		if inIRQ {
+			return 0xcc20, value&4 > 0, err
+		} else {
+			return 0xcc00, value&1 > 0, err
+		}
 	}
 
-	value, err := ReadByte(loc, 0x4)
-	if err != nil {
-		return 0, false, err
-	}
-
-	if inIRQ {
-		return 0xcc20, value&4 > 0, nil
-	}
-
-	return 0xcc00, value&1 > 0, nil
+	return 0, false, ErrorUnknownDevice
 }
-func (h *HAL) patchHookConfigure(loc MemoryRegion, inIRQ bool, enable bool) error {
+func (h *HAL) patchHookSet(loc MemoryRegion, inIRQ bool, enable bool) error {
 	if h.config.LogFunc != nil {
 		h.config.LogFunc(2, "Configuring userhook: inIRQ=%v, enable=%v", inIRQ, enable)
 	}
@@ -272,26 +308,47 @@ func (h *HAL) patchHookConfigure(loc MemoryRegion, inIRQ bool, enable bool) erro
 			}
 			return WriteByte(loc, 0x5, value)
 		}
-	}
-
-	value, err := ReadByte(loc, 0x4)
-	if err != nil {
-		return err
-	}
-
-	if inIRQ {
-		value &= ^byte(4)
-		if enable {
-			value |= 4
+	} else if h.deviceType == 2107 {
+		value, err := ReadByte(loc, 0x8)
+		if err != nil {
+			return err
 		}
-	} else {
-		value &= ^byte(1)
-		if enable {
-			value |= 1
+
+		if inIRQ {
+			value &= ^byte(2)
+			if enable {
+				value |= 2
+			}
+		} else {
+			value &= ^byte(1)
+			if enable {
+				value |= 1
+			}
 		}
+
+		return WriteByte(loc, 0x8, value)
+	} else if h.deviceType == 2109 {
+		value, err := ReadByte(loc, 0x4)
+		if err != nil {
+			return err
+		}
+
+		if inIRQ {
+			value &= ^byte(4)
+			if enable {
+				value |= 4
+			}
+		} else {
+			value &= ^byte(1)
+			if enable {
+				value |= 1
+			}
+		}
+
+		return WriteByte(loc, 0x4, value)
 	}
 
-	return WriteByte(loc, 0x4, value)
+	return ErrorUnknownDevice
 }
 
 func (h *HAL) patchInitAlloc(userConfig MemoryRegion) (bool, error) {
@@ -313,6 +370,8 @@ func (h *HAL) patchInstall() (bool, error) {
 	var installBlobs []CodeBlob
 	if h.deviceType == 2109 {
 		installBlobs = installBlobs2109
+	} else if h.deviceType == 2107 {
+		installBlobs = installBlobs2107
 	} else if h.deviceType == 2106 {
 		installBlobs = installBlobs2106
 	} else {
@@ -416,27 +475,41 @@ func (h *HAL) patchInstall() (bool, error) {
 		return true, err
 	}
 
-	if userCodePresent && (!enableIrq || !enableNorm) {
-		return true, ErrorPatchFailed
+	var oldCodeIRQ []byte
+	if userCodePresent {
+		if !enableIrq || !enableNorm {
+			return true, ErrorPatchFailed
+		}
+	} else {
+		enableIrq = true
+		enableNorm = true
+		if h.deviceType == 2107 {
+			/* If the USB IRQ patch is enabled it must call the original handler (or do everything itself) */
+			oldCodeIRQ = []byte{0x02, 0x54, 0xae}
+		}
+	}
+
+	if h.deviceType == 2107 {
+		/* Disable callbacks during writing, just putting RET is not enough */
+		if err := h.patchHookSet(userConfig, true, false); err != nil {
+			return true, err
+		} else if err := h.patchHookSet(userConfig, false, false); err != nil {
+			return true, err
+		}
 	}
 
 	/* Install trampolines to callgate */
-	if err := h.patchTrampolineInstall(ram, userCodePresent, addrIrq, 0xee, h.patchCallAddrs[0]); err != nil {
+	if err := h.patchTrampolineInstall(ram, oldCodeIRQ, addrIrq, 0xee, h.patchCallAddrs[0]); err != nil {
+		return true, err
+	} else if err := h.patchTrampolineInstall(ram, nil, addrNorm, 0xef, h.patchCallAddrs[0]); err != nil {
 		return true, err
 	}
 
-	if err := h.patchTrampolineInstall(ram, userCodePresent, addrNorm, 0xef, h.patchCallAddrs[0]); err != nil {
+	/* Re-enable callbacks */
+	if err := h.patchHookSet(userConfig, true, enableIrq); err != nil {
 		return true, err
-	}
-
-	/* Enable callbacks */
-	if !userCodePresent {
-		if err := h.patchHookConfigure(userConfig, true, true); err != nil {
-			return true, err
-		}
-		if err := h.patchHookConfigure(userConfig, false, true); err != nil {
-			return true, err
-		}
+	} else if err := h.patchHookSet(userConfig, false, enableNorm); err != nil {
+		return true, err
 	}
 
 	/* Write patch sumblock */

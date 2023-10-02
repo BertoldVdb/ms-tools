@@ -9,3 +9,4 @@ rm hook_2106.asm
 as31 -Fbin gpio.asm 
 as31 -Fbin code.asm
 as31 -Fbin i2cRead2109.asm
+as31 -Fbin i2cRead2107.asm

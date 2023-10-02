@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -23,6 +23,7 @@ type dumpCodeParams struct {
 	addrLoad    int
 	addrHook    int
 	valueHook   byte
+	delay       time.Duration
 }
 
 func (d *DumpROM) Run(c *Context) error {
@@ -36,6 +37,14 @@ func (d *DumpROM) Run(c *Context) error {
 		p.addrLoad = 0xC4A0
 		p.addrHook = 9
 		p.valueHook = 0x96
+	} else if strings.Contains(devType, "MS2107") {
+		p.addrMailbox = 0xD000
+		p.addrTemp = 0xD100
+		p.addrTempLen = 256
+		p.addrLoad = 0xC800
+		p.addrHook = 8
+		p.valueHook = 1
+		p.delay = 25 * time.Millisecond
 	} else if strings.Contains(devType, "MS2109") {
 		p.addrMailbox = 0xCBF0
 		p.addrTemp = 0xD300
@@ -52,7 +61,7 @@ func (d *DumpROM) Run(c *Context) error {
 		return err
 	}
 
-	return ioutil.WriteFile(d.Filename, code, 0644)
+	return os.WriteFile(d.Filename, code, 0644)
 }
 
 //go:embed asm/dumprom.bin
@@ -104,7 +113,7 @@ func (d *DumpROM) work(ms *mshal.HAL, p dumpCodeParams) ([]byte, error) {
 		return nil, err
 	}
 
-	/* Enable USB hook */
+	/* Enable USB/Periodic hook */
 	if err := mshal.WriteByte(config, p.addrHook, p.valueHook); err != nil {
 		return nil, err
 	}
@@ -132,6 +141,8 @@ func (d *DumpROM) work(ms *mshal.HAL, p dumpCodeParams) ([]byte, error) {
 		if err := mshal.WriteByte(xdata, p.addrMailbox, byte(remaining)); err != nil {
 			return nil, err
 		}
+
+		time.Sleep(p.delay)
 
 		ack, err := mshal.ReadByte(xdata, p.addrMailbox)
 		if err != nil {

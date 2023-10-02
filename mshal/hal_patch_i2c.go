@@ -2,7 +2,9 @@ package mshal
 
 func (h *HAL) patchI2CStart() error {
 	addr := 0x3639
-	if h.deviceType == 2109 {
+	if h.deviceType == 2107 {
+		addr = 0x68bd
+	} else if h.deviceType == 2109 {
 		addr = 0x6a8c
 	}
 
@@ -12,7 +14,9 @@ func (h *HAL) patchI2CStart() error {
 
 func (h *HAL) patchI2CStop() error {
 	addr := 0x3730
-	if h.deviceType == 2109 {
+	if h.deviceType == 2107 {
+		addr = 0x6b5b
+	} else if h.deviceType == 2109 {
 		addr = 0x6aba
 	}
 	_, err := h.PatchExecFunc(true, addr, PatchExecFuncRequest{})
@@ -21,7 +25,7 @@ func (h *HAL) patchI2CStop() error {
 
 func (h *HAL) patchI2CRead(ack bool) (uint8, error) {
 	addr := 0x26cb
-	if h.deviceType == 2109 {
+	if h.deviceType == 2109 || h.deviceType == 2107 {
 		addr = h.patchCallAddrs[3]
 	}
 	r7 := byte(1)
@@ -34,11 +38,13 @@ func (h *HAL) patchI2CRead(ack bool) (uint8, error) {
 
 func (h *HAL) patchI2CWrite(value uint8) (bool, error) {
 	addr := 0x2126
-	if h.deviceType == 2109 {
+	if h.deviceType == 2107 {
+		addr = 0x5323
+	} else if h.deviceType == 2109 {
 		addr = 0x4648
 	}
 	resp, err := h.PatchExecFunc(true, addr, PatchExecFuncRequest{R7_A: value})
-	if h.deviceType == 2109 {
+	if h.deviceType != 2106 {
 		return resp.C, err
 	}
 	return resp.R7 > 0, err

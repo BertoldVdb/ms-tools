@@ -62,9 +62,13 @@ func New(dev gohid.HIDDevice, config HALConfig) (*HAL, error) {
 	case 0xa7:
 		h.deviceType = 2109
 
+	case 0xff: /* TODO: Find a better ID register, as this will likely match many devices */
+		h.deviceType = 2107
+
 	case 0x00: /* TODO: Find a better ID register, as this will likely match many devices */
 		h.deviceType = 2130
 		config.PatchTryInstall = false
+
 	default:
 		return nil, ErrorUnknownDevice
 	}
@@ -140,6 +144,8 @@ func (h *HAL) GetDeviceType() string {
 		return "MS2106"
 	} else if h.deviceType == 2130 {
 		return "MS2130"
+	} else if h.deviceType == 2107 {
+		return "MS2107"
 	}
 
 	return "MS2109"
