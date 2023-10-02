@@ -72,9 +72,9 @@ func patchTrampolineEncode(orig []byte, origAddr int, R0Value byte, hookAddr int
 	return result
 }
 
-func (h *HAL) patchTrampolineInstall(ram MemoryRegion, oldCode []byte, addr int, R0value byte, hookAddr int) error {
+func (h *HAL) patchTrampolineInstall(ram MemoryRegion, replaceCode bool, origAddr int, addr int, R0value byte, hookAddr int) error {
 	var trampoline []byte
-	if len(oldCode) == 0 {
+	if replaceCode {
 		replaceLen := 0
 		var in [14]byte
 
@@ -94,7 +94,7 @@ func (h *HAL) patchTrampolineInstall(ram MemoryRegion, oldCode []byte, addr int,
 
 		trampoline = patchTrampolineEncode(in[:replaceLen], addr+replaceLen, R0value, hookAddr)
 	} else {
-		trampoline = patchTrampolineEncode(oldCode, 0, R0value, hookAddr)
+		trampoline = patchTrampolineEncode(nil, origAddr, R0value, hookAddr)
 	}
 
 	trampolineAddr := h.patchAlloc(len(trampoline))
@@ -475,7 +475,7 @@ func (h *HAL) patchInstall() (bool, error) {
 		return true, err
 	}
 
-	var oldCodeIRQ []byte
+	nextAddr := 0
 	if userCodePresent {
 		if !enableIrq || !enableNorm {
 			return true, ErrorPatchFailed
@@ -485,7 +485,7 @@ func (h *HAL) patchInstall() (bool, error) {
 		enableNorm = true
 		if h.deviceType == 2107 {
 			/* If the USB IRQ patch is enabled it must call the original handler (or do everything itself) */
-			oldCodeIRQ = []byte{0x02, 0x54, 0xae}
+			nextAddr = 0x54ae
 		}
 	}
 
@@ -499,9 +499,9 @@ func (h *HAL) patchInstall() (bool, error) {
 	}
 
 	/* Install trampolines to callgate */
-	if err := h.patchTrampolineInstall(ram, oldCodeIRQ, addrIrq, 0xee, h.patchCallAddrs[0]); err != nil {
+	if err := h.patchTrampolineInstall(ram, userCodePresent, nextAddr, addrIrq, 0xee, h.patchCallAddrs[0]); err != nil {
 		return true, err
-	} else if err := h.patchTrampolineInstall(ram, nil, addrNorm, 0xef, h.patchCallAddrs[0]); err != nil {
+	} else if err := h.patchTrampolineInstall(ram, userCodePresent, 0, addrNorm, 0xef, h.patchCallAddrs[0]); err != nil {
 		return true, err
 	}
 

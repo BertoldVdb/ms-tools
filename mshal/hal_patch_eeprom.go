@@ -31,7 +31,9 @@ func (h *HAL) patchEepromDetectSize() (int, error) {
 }
 
 func (h *HAL) patchEEPROMUnlock(unlock bool) error {
-	if h.deviceType == 2109 {
+	if h.deviceType == 2107 {
+		return h.GPIOWrite(4, !unlock)
+	} else if h.deviceType == 2109 {
 		return h.GPIOWrite(5, !unlock)
 	}
 
