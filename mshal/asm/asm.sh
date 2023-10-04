@@ -10,3 +10,4 @@ as31 -Fbin gpio.asm
 as31 -Fbin code.asm
 as31 -Fbin i2cRead2109.asm
 as31 -Fbin i2cRead2107.asm
+as31 -Fbin uart_tx.asm

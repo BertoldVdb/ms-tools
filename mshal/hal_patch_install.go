@@ -122,13 +122,14 @@ var codeCallgate2106 []byte
 var codeCallgate2109 []byte
 
 func relocateCallgate(result []byte, addr int) (int, []byte) {
-	if result[5] != 0x12 {
-		panic("Offset 5 is not LCALL")
+	lcall := 5
+	if result[lcall] != 0x12 {
+		panic("Offset is not LCALL")
 	}
 
-	callAddr := binary.BigEndian.Uint16(result[6:])
+	callAddr := binary.BigEndian.Uint16(result[lcall+1:])
 	callAddr += uint16(addr)
-	binary.BigEndian.PutUint16(result[6:], callAddr)
+	binary.BigEndian.PutUint16(result[lcall+1:], callAddr)
 
 	return addr, result
 }
@@ -142,6 +143,9 @@ var codeMOVC []byte
 //go:embed asm/i2cRead2107.bin
 var codei2cRead2107 []byte
 
+//go:embed asm/uart_tx.bin
+var codeUartTX []byte
+
 //go:embed asm/i2cRead2109.bin
 var codei2cRead2109 []byte
 
@@ -153,6 +157,10 @@ var installBlobs2106 = []CodeBlob{
 		Data: codeGpio,
 	}, {
 		Data: codeMOVC,
+	}, {
+		Data: codeMOVC,
+	}, {
+		Data: codeUartTX,
 	}}
 
 var installBlobs2107 = []CodeBlob{
@@ -165,6 +173,8 @@ var installBlobs2107 = []CodeBlob{
 		Data: codeMOVC,
 	}, {
 		Data: codei2cRead2107,
+	}, {
+		Data: codeUartTX,
 	}}
 
 var installBlobs2109 = []CodeBlob{
@@ -177,8 +187,9 @@ var installBlobs2109 = []CodeBlob{
 		Data: codeMOVC,
 	}, {
 		Data: codei2cRead2109,
-	},
-}
+	}, {
+		Data: codeUartTX,
+	}}
 
 func (h *HAL) EEPROMReloadUser() error {
 	if h.config.LogFunc != nil {

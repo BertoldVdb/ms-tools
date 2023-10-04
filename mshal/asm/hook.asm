@@ -16,10 +16,14 @@ hookRun:
 	RLC   A
 	MOV   HID,   A
 
+	SETB EA
+
 hookRet:
 	RET
 
 hookWork:
+    CLR EA
+
 	MOV  DPH, HID+3
 	MOV  DPL, HID+4
 	MOV  R3,  HID+3
@@ -28,7 +32,7 @@ hookWork:
 	MOV  R6,  HID+6
 	MOV  R7,  HID+7
 	MOV  A,   R7
-        RRC  A
+    RRC  A
 	MOV  A,   R7
 
 	PUSH      HID+2

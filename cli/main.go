@@ -40,6 +40,8 @@ var CLI struct {
 	I2CScan     I2CScan     `cmd name:"i2c-scan" help:"Scan I2C bus and show discovered devices."`
 	I2CTransfer I2CTransfer `cmd name:"i2c-txfr" help:"Perform I2C transfer."`
 
+	UARTTx UARTTx `cmd name:"uart-tx" help:"Transmit data over UART."`
+
 	GPIOSet GPIOSet `cmd name:"gpio-set" help:"Set GPIO pin value and direction."`
 	GPIOGet GPIOGet `cmd name:"gpio-get" help:"Get GPIO values."`
 }
