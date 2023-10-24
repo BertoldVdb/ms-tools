@@ -41,6 +41,7 @@ var CLI struct {
 	I2CTransfer I2CTransfer `cmd name:"i2c-txfr" help:"Perform I2C transfer."`
 
 	UARTTx UARTTx `cmd name:"uart-tx" help:"Transmit data over UART."`
+	FlirTX FlirTX `cmd name:"flir-tx" help:"Transmit FLIR Tau(2) command over UART."`
 
 	GPIOSet GPIOSet `cmd name:"gpio-set" help:"Set GPIO pin value and direction."`
 	GPIOGet GPIOGet `cmd name:"gpio-get" help:"Get GPIO values."`
