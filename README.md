@@ -63,7 +63,7 @@ These are randomly selected links after a quick Aliexpress search, I have no rel
 - https://aliexpress.com/item/4001066406950.html
 - https://aliexpress.com/item/1005002943812391.html
 
-You can buy packaged solutions as well, but there are many chips that convert CVBS->USB and you never know which one you get. Almost all single-chip embedded modules seem to be MS2106 based.
+You can buy packaged solutions as well, but there are many chips that convert CVBS->USB and you never know which one you get. Almost all single-chip embedded modules seem to be MS2106 based. The MS2106(s) is obsolete and you may get a MS2107, which is also supported.
 
 *MS2109:*
 
