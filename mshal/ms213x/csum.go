@@ -14,7 +14,7 @@ func calcSum(f []byte) uint16 {
 	return csum
 }
 
-func CheckImage(f []byte) error {
+func work(f []byte, fix bool) error {
 	if len(f) < 0x30+4 {
 		return errors.New("file too short (hdr)")
 	}
@@ -32,11 +32,24 @@ func CheckImage(f []byte) error {
 	hdrSum := calcSum(f[2:12]) + calcSum(f[16:0x30])
 	codeSum := calcSum(f[0x30:end])
 
-	if hdrImg := binary.BigEndian.Uint16(f[end:]); hdrSum != hdrImg {
-		return fmt.Errorf("header checksum mismatch: %x != %x", hdrSum, hdrImg)
-	} else if codeImg := binary.BigEndian.Uint16(f[end+2:]); codeSum != codeImg {
-		return fmt.Errorf("code checksum mismatch: %x != %x", codeSum, codeImg)
+	if !fix {
+		if hdrImg := binary.BigEndian.Uint16(f[end:]); hdrSum != hdrImg {
+			return fmt.Errorf("header checksum mismatch: %x != %x", hdrSum, hdrImg)
+		} else if codeImg := binary.BigEndian.Uint16(f[end+2:]); codeSum != codeImg {
+			return fmt.Errorf("code checksum mismatch: %x != %x", codeSum, codeImg)
+		}
+	} else {
+		binary.BigEndian.PutUint16(f[end:], hdrSum)
+		binary.BigEndian.PutUint16(f[end+2:], codeSum)
 	}
 
 	return nil
+}
+
+func CheckImage(f []byte) error {
+	return work(f, false)
+}
+
+func FixImage(f []byte) {
+	work(f, true)
 }

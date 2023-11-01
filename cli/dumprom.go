@@ -23,7 +23,6 @@ type dumpCodeParams struct {
 	addrLoad    int
 	addrHook    int
 	valueHook   byte
-	delay       time.Duration
 }
 
 func (d *DumpROM) Run(c *Context) error {
@@ -44,7 +43,6 @@ func (d *DumpROM) Run(c *Context) error {
 		p.addrLoad = 0xC800
 		p.addrHook = 8
 		p.valueHook = 1
-		p.delay = 25 * time.Millisecond
 	} else if strings.Contains(devType, "MS2109") {
 		p.addrMailbox = 0xCBF0
 		p.addrTemp = 0xD300
@@ -52,6 +50,13 @@ func (d *DumpROM) Run(c *Context) error {
 		p.addrLoad = 0xCC20
 		p.addrHook = 4
 		p.valueHook = 1 << 2
+	} else if strings.Contains(devType, "MS2130") {
+		p.addrMailbox = 0x7C00
+		p.addrTemp = 0x7D00
+		p.addrTempLen = 256
+		p.addrHook = 0x7D00
+		p.addrHook = 8
+		p.valueHook = 1
 	} else {
 		return mshal.ErrorUnknownDevice
 	}
@@ -109,8 +114,10 @@ func (d *DumpROM) work(ms *mshal.HAL, p dumpCodeParams) ([]byte, error) {
 	time.Sleep(time.Second)
 
 	/* Write new code */
-	if _, err := xdata.Access(true, p.addrLoad, dumpBlob); err != nil {
-		return nil, err
+	if p.addrLoad > 0 {
+		if _, err := xdata.Access(true, p.addrLoad, dumpBlob); err != nil {
+			return nil, err
+		}
 	}
 
 	/* Enable USB/Periodic hook */
@@ -142,15 +149,22 @@ func (d *DumpROM) work(ms *mshal.HAL, p dumpCodeParams) ([]byte, error) {
 			return nil, err
 		}
 
-		time.Sleep(p.delay)
+		timeout := time.Now().Add(500 * time.Millisecond)
+		for {
+			ack, err := mshal.ReadByte(xdata, p.addrMailbox)
+			if err != nil {
+				return nil, err
+			}
 
-		ack, err := mshal.ReadByte(xdata, p.addrMailbox)
-		if err != nil {
-			return nil, err
-		}
+			if ack != 0 {
+				if time.Now().After(timeout) {
+					return nil, mshal.ErrorPatchFailed
+				}
+			} else {
+				break
+			}
 
-		if ack != 0 {
-			return nil, mshal.ErrorPatchFailed
+			time.Sleep(20 * time.Millisecond)
 		}
 
 		_, err = xdata.Access(false, p.addrTemp, buf[index:(index+remaining)])
@@ -163,9 +177,6 @@ func (d *DumpROM) work(ms *mshal.HAL, p dumpCodeParams) ([]byte, error) {
 		fmt.Printf("Dumping code: %d bytes read.\n", addr)
 	}
 
-	/* Remove overwritten code from dump */
-	buf = bytes.ReplaceAll(buf, dumpBlob, orig)
-
 	/* Disable USB hook */
 	if err := mshal.WriteByte(config, p.addrHook, 0); err != nil {
 		return nil, err
@@ -175,8 +186,13 @@ func (d *DumpROM) work(ms *mshal.HAL, p dumpCodeParams) ([]byte, error) {
 	time.Sleep(25 * time.Millisecond)
 
 	/* Put original code back */
-	if _, err := xdata.Access(true, p.addrLoad, orig); err != nil {
-		return nil, err
+	if p.addrLoad > 0 {
+		/* Remove overwritten code from dump */
+		buf = bytes.ReplaceAll(buf, dumpBlob, orig)
+
+		if _, err := xdata.Access(true, p.addrLoad, orig); err != nil {
+			return nil, err
+		}
 	}
 
 	/* Re-enable old hooks */
