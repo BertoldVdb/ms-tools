@@ -1,6 +1,8 @@
 package mshal
 
 import (
+	"bytes"
+
 	"github.com/BertoldVdb/ms-tools/gohid"
 )
 
@@ -16,6 +18,7 @@ type HAL struct {
 	patchCallAddrs              []int
 
 	patchInstalled bool
+	patchCanCall   bool
 
 	config           HALConfig
 	ms2130spiEnabled int
@@ -113,6 +116,19 @@ func New(dev gohid.HIDDevice, config HALConfig) (*HAL, error) {
 	}
 
 	h.config.LogFunc(1, "Assumed EEPROM Size: %d", h.eepromSize)
+
+	/* MS2130 can be running code from flash that is pre-patched. This is a hack to allow
+	 * using that even withtout offset discovery */
+	if h.deviceType == 2130 {
+		var id [4]byte
+		if _, err := xdata.Access(false, 0x7b00, id[:]); err != nil {
+			return nil, err
+		}
+		if bytes.Equal(id[:], []byte("BVDB")) {
+			h.patchCanCall = true
+			h.config.LogFunc(1, "MS213x firmware supports calling functions")
+		}
+	}
 
 	return h, nil
 }

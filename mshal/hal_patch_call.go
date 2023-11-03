@@ -60,7 +60,7 @@ type PatchExecFuncRequest struct {
 func (h *HAL) PatchExecFunc(inIRQ bool, addr int, req PatchExecFuncRequest) (PatchExecFuncResponse, error) {
 	var response PatchExecFuncResponse
 
-	if !h.patchInstalled {
+	if !h.patchInstalled && !h.patchCanCall {
 		return response, ErrorMissingFunction
 	}
 
