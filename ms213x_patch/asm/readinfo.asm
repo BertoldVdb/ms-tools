@@ -1,0 +1,26 @@
+; Resolution info
+MOV  DPTR, #0x7b10
+MOVX A, @DPTR
+MOV  R2, A
+
+INC  DPTR
+MOVX A, @DPTR
+MOV  R3, A
+
+INC  DPTR
+MOVX A, @DPTR
+MOV  R4, A
+
+INC  DPTR
+MOVX A, @DPTR
+MOV  R5, A
+
+; Signal info
+INC  DPTR
+MOVX A, @DPTR
+
+; Frame counter
+MOV  R6, 0x29
+MOV  R7, 0x28
+
+RET

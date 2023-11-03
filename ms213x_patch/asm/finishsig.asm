@@ -1,0 +1,7 @@
+ORL A, R7
+
+MOV  DPTR, #0x7b14
+MOVX @DPTR, A
+
+MOV R7, A
+RET
