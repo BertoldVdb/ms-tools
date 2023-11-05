@@ -1,5 +1,5 @@
 ; Resolution info
-MOV  DPTR, #0x7b10
+MOV  DPTR, #0xe184
 MOVX A, @DPTR
 MOV  R2, A
 
@@ -7,7 +7,7 @@ INC  DPTR
 MOVX A, @DPTR
 MOV  R3, A
 
-INC  DPTR
+MOV  DPTR, #0xe18c
 MOVX A, @DPTR
 MOV  R4, A
 

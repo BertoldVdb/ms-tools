@@ -28,8 +28,14 @@ var patchFinishf660 []byte
 //go:embed asm/finishsig.bin
 var patchFinishSig []byte
 
+//go:embed asm/vsync.bin
+var patchVSYNC []byte
+
 //go:embed asm/readinfo.bin
 var patchReadInfo []byte
+
+//go:embed asm/readinfo2.bin
+var patchReadInfo2 []byte
 
 func (p *patcher) addCode(code []byte) uint16 {
 	offs := len(p.image)
@@ -62,6 +68,11 @@ func (p *patcher) createHook(cmd uint8) uint16 {
 
 func (p *patcher) replaceJump(offset, dest uint16) {
 	p.image[offset] = 0x02
+	binary.BigEndian.PutUint16(p.image[offset+1:], dest)
+}
+
+func (p *patcher) replaceCall(offset, dest uint16) {
+	p.image[offset] = 0x12
 	binary.BigEndian.PutUint16(p.image[offset+1:], dest)
 }
 
@@ -115,8 +126,12 @@ func patch(in []byte) ([]byte, error) {
 	/* Write signal info to safe place (0x7b14) */
 	p.replaceJump(0xe9c6, p.addCode(patchFinishSig))
 
+	/* Count frames */
+	p.replaceCall(0xb208, p.addCode(patchVSYNC))
+
 	/* Finally, add read results function */
-	log.Printf("ReadInfo Offset: %02x", p.addCode(patchReadInfo))
+	log.Printf("ReadInfo1 Offset: %02x", p.addCode(patchReadInfo))
+	log.Printf("ReadInfo2 Offset: %02x", p.addCode(patchReadInfo2))
 
 	return p.image, nil
 }
